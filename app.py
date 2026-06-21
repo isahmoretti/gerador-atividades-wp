@@ -1,6 +1,8 @@
+import base64
 import os
 import streamlit as st
 from urllib.parse import quote
+import requests
 from openai import OpenAI
 
 CSS = """.atividade-pdf-wrap{margin:20px 0 28px}
@@ -34,6 +36,23 @@ def caixa_codigo(label, codigo, lang):
 
 def gerar_alt_text_ia(url, api_key):
     try:
+        resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+
+        content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+        if content_type not in ("image/jpeg", "image/png", "image/gif", "image/webp"):
+            if url.lower().endswith(".webp"):
+                content_type = "image/webp"
+            elif url.lower().endswith(".png"):
+                content_type = "image/png"
+            elif url.lower().endswith(".gif"):
+                content_type = "image/gif"
+            else:
+                content_type = "image/jpeg"
+
+        b64 = base64.b64encode(resp.content).decode("utf-8")
+        data_url = f"data:{content_type};base64,{b64}"
+
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -44,7 +63,7 @@ def gerar_alt_text_ia(url, api_key):
                     "content": [
                         {
                             "type": "image_url",
-                            "image_url": {"url": url},
+                            "image_url": {"url": data_url},
                         },
                         {
                             "type": "text",
@@ -64,6 +83,8 @@ def gerar_alt_text_ia(url, api_key):
             ],
         )
         return response.choices[0].message.content.strip()
+    except requests.exceptions.RequestException as e:
+        return f"Erro ao baixar imagem: {e}"
     except Exception as e:
         return f"Erro: {e}"
 
