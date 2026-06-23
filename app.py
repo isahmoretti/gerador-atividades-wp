@@ -36,7 +36,13 @@ def caixa_codigo(label, codigo, lang):
 
 def gerar_alt_text_ia(url, api_key):
     try:
-        resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        from urllib.parse import urlparse
+        origin = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+        resp = requests.get(url, timeout=15, headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": origin,
+            "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+        })
         resp.raise_for_status()
 
         content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
