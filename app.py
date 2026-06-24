@@ -102,7 +102,9 @@ def main():
         layout="wide",
     )
 
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+    api_key = st.secrets.get("OPENAI_API_KEY", "") if hasattr(st, "secrets") else ""
+    if not api_key:
+        api_key = os.environ.get("OPENAI_API_KEY", "")
     with st.sidebar:
         st.header("Configuração")
         if api_key:
